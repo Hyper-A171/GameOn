@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Car Drive - Enhanced</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        #scoreDiv {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+        }
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            padding: 10px 20px;
+            background: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreDiv">Score: <span id="score">0</span></div>
+    <button id="startButton">Start Game</button>
+    <script>
+        let scene, camera, renderer, car, road;
+        let obstacles = [];
+        let score = 0;
+        let gameOver = false;
+        let gameRunning = false;
+        let speed = 0.1;
+        
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            let light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 5);
+            light.castShadow = true;
+            scene.add(light);
+
+            // Create road
+            let roadGeometry = new THREE.PlaneGeometry(10, 100);
+            let roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.rotation.x = -Math.PI / 2;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            // Load car texture
+            let textureLoader = new THREE.TextureLoader();
+            let carTexture = textureLoader.load('/images.png');
+            
+            // Create car with texture
+            let carGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+            let carMaterial = new THREE.MeshStandardMaterial({ map: carTexture });
+            car = new THREE.Mesh(carGeometry, carMaterial);
+            car.position.y = 0.3;
+            car.castShadow = true;
+            scene.add(car);
+
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function createObstacle() {
+            let obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
+            let obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            let obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+            obstacle.position.set((Math.random() - 0.5) * 8, 0.5, -20);
+            obstacle.castShadow = true;
+            scene.add(obstacle);
+            obstacles.push(obstacle);
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            road.position.z += speed;
+            if (road.position.z > 10) road.position.z = 0;
+            
+            obstacles.forEach((ob, index) => {
+                ob.position.z += speed;
+                if (ob.position.z > 5) {
+                    scene.remove(ob);
+                    obstacles.splice(index, 1);
+                    score++;
+                }
+                if (car && ob.position.distanceTo(car.position) < 1) {
+                    gameOver = true;
+                }
+            });
+
+            if (Math.random() < 0.02) createObstacle();
+            if (gameOver) alert("Game Over! Score: " + score);
+            document.getElementById("score").innerText = score;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (car) {
+                if (e.key === "ArrowLeft" && car.position.x > -4) car.position.x -= 0.5;
+                if (e.key === "ArrowRight" && car.position.x < 4) car.position.x += 0.5;
+            }
+        });
+        
+        document.getElementById("startButton").addEventListener("click", () => {
+            gameRunning = true;
+            document.getElementById("startButton").style.display = "none";
+        });
+
+        init();
+        animate();
+    </script>
+</body>
+</html>

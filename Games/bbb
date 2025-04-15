@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrom Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .carrom-board {
+            width: 600px;
+            height: 600px;
+            border: 5px solid #000;
+            border-radius: 10px;
+            background-color: #ffeb99;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .pocket {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: black;
+            position: absolute;
+        }
+
+        .pocket.top-left { top: 0; left: 0; }
+        .pocket.top-right { top: 0; right: 0; }
+        .pocket.bottom-left { bottom: 0; left: 0; }
+        .pocket.bottom-right { bottom: 0; right: 0; }
+
+        .carrom-coin {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            position: absolute;
+        }
+
+        .striker {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ff4d4d;
+            position: absolute;
+            bottom: 50px;
+            left: 275px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="carrom-board" id="board">
+    <div class="pocket top-left"></div>
+    <div class="pocket top-right"></div>
+    <div class="pocket bottom-left"></div>
+    <div class="pocket bottom-right"></div>
+
+    <div class="carrom-coin" id="coin1" style="top: 280px; left: 280px;"></div>
+    <div class="striker" id="striker"></div>
+</div>
+
+<script>
+    const striker = document.getElementById('striker');
+    let isDragging = false;
+    let startX, startY, velocityX, velocityY;
+
+    striker.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        striker.style.left = `${Math.max(50, Math.min(500, e.clientX - 25))}px`;
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        velocityX = (startX - e.clientX) / 10;
+        velocityY = (startY - e.clientY) / 10;
+        moveStriker();
+    });
+
+    function moveStriker() {
+        let posX = striker.offsetLeft;
+        let posY = striker.offsetTop;
+
+        function animate() {
+            if (Math.abs(velocityX) < 0.1 && Math.abs(velocityY) < 0.1) return;
+            posX += velocityX;
+            posY += velocityY;
+            velocityX *= 0.98;
+            velocityY *= 0.98;
+            striker.style.left = `${Math.max(0, Math.min(550, posX))}px`;
+            striker.style.top = `${Math.max(0, Math.min(550, posY))}px`;
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+</script>
+
+</body>
+</html>

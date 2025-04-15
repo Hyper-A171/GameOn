@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 20px;
+    }
+    canvas {
+      border: 1px solid white;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <p>Score: <span id="score">0</span></p>
+  <canvas width="400" height="400" id="game"></canvas>
+  <button id="restart" style="display: none;">Restart</button>
+  <button id="speedLevel">Speed Level: 12</button>
+
+  <script>
+    var canvas = document.getElementById('game');
+    var context = canvas.getContext('2d');
+    var scoreDisplay = document.getElementById('score');
+    var restartButton = document.getElementById('restart');
+    var speedLevelButton = document.getElementById('speedLevel');
+
+    var grid = 16;
+    var count = 0;
+    var score = 0;
+    var speed = 12; // Start at the highest speed level
+    var gameOver = false;
+
+    // Load apple and snake images
+    var appleImage = new Image();
+    appleImage.src = 'Apple_PNG_Clip_Art-1467.png'; // Ensure this image is available in your project directory
+
+    var snakeHeadImage = new Image();
+    snakeHeadImage.src = 'head.png'; // Image for snake's head
+
+    var snakeBodyImage = new Image();
+    snakeBodyImage.src = 'copy.png'; // Image for snake's body
+
+    var snake = {
+      x: 160,
+      y: 160,
+      dx: grid,
+      dy: 0,
+      cells: [],
+      maxCells: 4
+    };
+    var apple = {
+      x: 320,
+      y: 320
+    };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function resetGame() {
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      score = 0;
+      speed = 12; // Reset to the highest speed level
+      scoreDisplay.textContent = score;
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+      gameOver = false;
+      restartButton.style.display = "none";
+      speedLevelButton.textContent = `Speed Level: ${speed}`; // Reset the speed level display
+    }
+
+    function updateSpeed() {
+      speed = Math.max(2, 12 - Math.floor(score / 5)); // Slower increase in speed every 5 points, but reverse logic
+      speedLevelButton.textContent = `Speed Level: ${speed}`; // Update the button display when the speed is updated
+    }
+
+    function loop() {
+      if (gameOver) return;
+      requestAnimationFrame(loop);
+      if (++count < speed) {
+        return;
+      }
+      count = 0;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+
+      if (snake.x < 0) {
+        snake.x = canvas.width - grid;
+      } else if (snake.x >= canvas.width) {
+        snake.x = 0;
+      }
+      
+      if (snake.y < 0) {
+        snake.y = canvas.height - grid;
+      } else if (snake.y >= canvas.height) {
+        snake.y = 0;
+      }
+
+      snake.cells.unshift({ x: snake.x, y: snake.y });
+      if (snake.cells.length > snake.maxCells) {
+        snake.cells.pop();
+      }
+
+      // Draw the apple image
+      context.drawImage(appleImage, apple.x, apple.y, grid, grid); // Use the image for the apple
+
+      // Draw snake cells, using different images for the head and body
+      snake.cells.forEach(function (cell, index) {
+        if (index === 0) {
+          // Draw snake head with snakeHeadImage
+          context.drawImage(snakeHeadImage, cell.x, cell.y, grid, grid); // Use the image for the head
+        } else {
+          // Draw snake body with snakeBodyImage
+          context.drawImage(snakeBodyImage, cell.x, cell.y, grid, grid); // Use the image for the body
+        }
+      });
+
+      // Check for apple collision
+      snake.cells.forEach(function (cell, index) {
+        if (cell.x === apple.x && cell.y === apple.y) {
+          snake.maxCells++;
+          score++;
+          scoreDisplay.textContent = score;
+          apple.x = getRandomInt(0, 25) * grid;
+          apple.y = getRandomInt(0, 25) * grid;
+          updateSpeed();
+        }
+
+        // Check for snake collision
+        for (var i = index + 1; i < snake.cells.length; i++) {
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            gameOver = true;
+            restartButton.style.display = "block";
+          }
+        }
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.which === 37 && snake.dx === 0) {
+        snake.dx = -grid;
+        snake.dy = 0;
+      } else if (e.which === 38 && snake.dy === 0) {
+        snake.dy = -grid;
+        snake.dx = 0;
+      } else if (e.which === 39 && snake.dx === 0) {
+        snake.dx = grid;
+        snake.dy = 0;
+      } else if (e.which === 40 && snake.dy === 0) {
+        snake.dy = grid;
+        snake.dx = 0;
+      }
+    });
+
+    restartButton.addEventListener('click', function () {
+      resetGame();
+      requestAnimationFrame(loop);
+    });
+
+    // Control speed with the speed level button (Reversed logic)
+    speedLevelButton.addEventListener('click', function () {
+      if (speed > 2) {
+        speed--; // Decrease speed when clicked
+      } else {
+        speed = 12; // Reset speed to 12 when it reaches the lowest
+      }
+      speedLevelButton.textContent = `Speed Level: ${speed}`; // Update button text to show current speed
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
